@@ -34,7 +34,7 @@ sparcbot_driver:
       pwm_channel: 0
       pwm_frequency_hz: 20000
       motor_sign: 1
-      encoder_sign: -1
+      encoder_sign: 1
 
     right_motor:
       name: right
@@ -46,7 +46,7 @@ sparcbot_driver:
       pwm_channel: 1
       pwm_frequency_hz: 20000
       motor_sign: 1
-      encoder_sign: 1
+      encoder_sign: -1
 
 # -----------------------------------------------------------------------------
 # Robot geometry shared by every node
@@ -65,31 +65,31 @@ wheel_controller:
     log_file: ''
 
     left:
-      kp: 0.0
-      ki: 0.0
+      kp: 0.7
+      ki: 1.5
       kd: 0.0
       feedforward:
-        forward_static: 0.0
-        forward_velocity_gain: 0.0
-        reverse_static: 0.0
-        reverse_velocity_gain: 0.0
-        forward_breakaway: 0.0
-        reverse_breakaway: 0.0
+        forward_static: 0.18
+        forward_velocity_gain: 0.9
+        reverse_static: 0.18
+        reverse_velocity_gain: 0.9
+        forward_breakaway: 0.25
+        reverse_breakaway: 0.25
         stopped_velocity_threshold: 0.025
         max_command: 1.0
         zero_velocity_threshold: 0.0005
 
     right:
-      kp: 0.0
-      ki: 0.0
+      kp: 2.0
+      ki: 3.0
       kd: 0.0
       feedforward:
-        forward_static: 0.0
-        forward_velocity_gain: 0.0
-        reverse_static: 0.0
-        reverse_velocity_gain: 0.0
-        forward_breakaway: 0.0
-        reverse_breakaway: 0.0
+        forward_static: 0.15
+        forward_velocity_gain: 0.55
+        reverse_static: 0.15
+        reverse_velocity_gain: 0.55
+        forward_breakaway: 0.35
+        reverse_breakaway: 0.35
         stopped_velocity_threshold: 0.025
         max_command: 1.0
         zero_velocity_threshold: 0.0005
