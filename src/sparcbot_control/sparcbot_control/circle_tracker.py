@@ -28,7 +28,7 @@ from std_srvs.srv import Trigger
 # ======================================================================
 
 # The circle
-CIRCLE_RADIUS_M = 0.4           # Lab 6 radius [m]
+CIRCLE_RADIUS_M = 0.4         # Lab 6 radius [m]
 SPEED_M_S = 0.2                 # Lab 6 forward speed [m/s]
 COUNTER_CLOCKWISE = True        # False = curve to the right
 LAPS = 1.0
@@ -36,9 +36,9 @@ AUTOSTART = False               # True = drive as soon as /odom arrives (leave F
 
 # Lab 6 pole-placement gains (for v_ref=0.2, w_ref=+0.5).
 #TODO Set your gains here
-K1 = 0.0
-K5 = 0.0
-K6 = 0.0
+K1 = -3.0
+K5 = -8.75
+K6 = -3.0
 
 # Safety
 MAX_LINEAR_M_S = 0.30           # command limits
@@ -422,11 +422,19 @@ class CircleTrackerNode(Node):
 
     def stop_robot(self, reason: str, warn: bool = False) -> None:
         """Command zero velocity and go idle."""
+        # was_active = self.state != IDLE
+        # self.state = IDLE
+        # self.cmd_pub.publish(Twist())
+        # if was_active:
+        #     (self.get_logger().warn if warn else self.get_logger().info)(reason)
         was_active = self.state != IDLE
         self.state = IDLE
         self.cmd_pub.publish(Twist())
         if was_active:
-            (self.get_logger().warn if warn else self.get_logger().info)(reason)
+            if warn:
+                self.get_logger().warn(reason)
+            else:
+                self.get_logger().info(reason)
 
 
 def main(args=None):

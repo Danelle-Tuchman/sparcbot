@@ -66,7 +66,7 @@ int main() {
         RawTerminal terminal;
 
         double linear_cmd = 0.20;
-        double turn_cmd = 0.16;
+        double turn_cmd = 0.3;
 
         constexpr double MIN_CMD = 0.05;
         constexpr double MAX_CMD = 0.60;

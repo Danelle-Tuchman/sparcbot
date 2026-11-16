@@ -108,12 +108,98 @@ class WheelController:
 
         # BEGIN SOLUTION
 
-
-
-        left_wheel_output = WheelControllerOutput(command=0.0) #TODO set command to your final controller output
-
-        right_wheel_output = WheelControllerOutput(command=0.0) #TODO set command to your final controller output
+         # BEGIN SOLUTION
+        outputs = [None, None]
+ 
+        for side in (LEFT, RIGHT):
+            cfg = self.config[side]
+            v_des = target_velocity_m_s[side]
+            v_meas = measured_velocity_m_s[side]
+            error = v_des - v_meas
+ 
+            # 1. Commanded stop: output zero and clear this wheel's memory so it doesn't creep.
+            if abs(v_des) < cfg.zero_velocity_threshold:
+                self.error_integral[side] = 0.0
+                self.previous_error[side] = error
+                self.previous_command[side] = 0.0
+                outputs[side] = WheelControllerOutput(error_m_s=error, command=0.0)
+                continue
+ 
+            # 2. Feedforward: static friction + speed-proportional term, plus breakaway
+            #    (deadband) compensation when the wheel is stopped.
+            #    ASSUMES reverse_static / reverse_breakaway are POSITIVE in sparcbot.yaml.
+            wheel_stopped = abs(v_meas) < cfg.stopped_velocity_threshold
+            if v_des > 0.0:
+                ff = cfg.forward_static + cfg.forward_velocity_gain * v_des
+                if wheel_stopped:
+                    ff = max(ff, cfg.forward_breakaway)
+            else:
+                ff = -cfg.reverse_static + cfg.reverse_velocity_gain * v_des
+                if wheel_stopped:
+                    ff = min(ff, -cfg.reverse_breakaway)
+ 
+            # 3. P term
+            p = cfg.kp * error
+ 
+            # 4. I term with clamping anti-windup: freeze only when the last command was
+            #    saturated AND the error pushes further in that same direction.
+            u_prev = self.previous_command[side]
+            saturated = abs(u_prev) >= cfg.max_command
+            pushing_further = error * u_prev > 0.0
+            if not (saturated and pushing_further):
+                self.error_integral[side] += error * dt_s
+            i = cfg.ki * self.error_integral[side]
+ 
+            # 5. D term on the error (no filter). Skipped on the first step, when there is
+            #    no previous error yet. Leave kd = 0 unless you need it (see notes).
+            if self.first_step:
+                d = 0.0
+            else:
+                d = cfg.kd * (error - self.previous_error[side]) / dt_s
+ 
+            # 6. Combine and saturate to the allowed duty range.
+            feedback = p + i + d
+            u = ff + feedback
+            u_sat = max(-cfg.max_command, min(cfg.max_command, u))
+ 
+            # 7. Remember for next step (saturated command, for anti-windup).
+            self.previous_error[side] = error
+            self.previous_command[side] = u_sat
+ 
+            outputs[side] = WheelControllerOutput(error_m_s=error,
+                                                  feedforward_command=ff,
+                                                  feedback_command=feedback,
+                                                  command=u_sat)
+ 
+        self.first_step = False
+ 
+        left_wheel_output = outputs[LEFT]
+        right_wheel_output = outputs[RIGHT]
+ 
+        self.log(
+            time_s=self.time_s,
+            left_target=target_velocity_m_s[LEFT],
+            left_measured=measured_velocity_m_s[LEFT],
+            left_ff=left_wheel_output.feedforward_command,
+            left_fb=left_wheel_output.feedback_command,
+            left_integral=self.error_integral[LEFT],
+            left_command=left_wheel_output.command,
+            right_target=target_velocity_m_s[RIGHT],
+            right_measured=measured_velocity_m_s[RIGHT],
+            right_ff=right_wheel_output.feedforward_command,
+            right_fb=right_wheel_output.feedback_command,
+            right_integral=self.error_integral[RIGHT],
+            right_command=right_wheel_output.command,
+        )
+ 
         return [left_wheel_output, right_wheel_output]
+
+
+
+        # left_wheel_output = WheelControllerOutput(command=0.0) #TODO set command to your final controller output
+
+        # right_wheel_output = WheelControllerOutput(command=0.0) #TODO set command to your final controller output
+        # return [left_wheel_output, right_wheel_output]
         # END SOLUTION
 
     def reset(self) -> None:
